@@ -186,6 +186,18 @@ a.btn-primary:hover,
     top: var(--alatoo-banner-h) !important;
 }
 
+/* ---------- Hide newsletter / email-subscription prompts ---------- */
+/* Taiga ships a "Do you want to receive announcements?" lightbox and a
+ * matching block in User Settings → Notifications. Neither makes sense
+ * for an internal university deployment, so we suppress both entirely. */
+tg-newsletter-email-lightbox,
+.newsletter-email-lightbox,
+[class*="newsletter-email-lightbox"],
+.newsletter-email.setting,
+[class*="newsletter"] {
+    display: none !important;
+}
+
 /* ---------- All secondary sidebars — global fixes on navy ---------- */
 /* Every sidebar.menu-secondary already gets background #1d2b6e from the
  * rule above. Taiga sets its own background-color on child li/a/header
