@@ -1,0 +1,5 @@
+# Shell scripts must stay LF-only — they run inside Linux containers
+# whose shebangs cannot tolerate \r.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.dockerfile text eol=lf

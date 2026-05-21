@@ -1,0 +1,50 @@
+# ======================================================
+# Ala-Too PM — root .gitignore
+# ======================================================
+
+# --- Secrets: NEVER commit the real .env ---
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+*.egg-info/
+.eggs/
+dist/
+build/
+.cache/
+.coverage
+celerybeat-schedule
+*.log
+
+# --- Node / frontend ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# --- Docker volumes / runtime ---
+media/
+static/
+logs/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.#*
+
+# --- Local settings overrides ---
+taiga-back/settings/local.py
+taiga-back/settings/celery_local.py
+taiga-back/settings/config.py

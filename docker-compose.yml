@@ -1,0 +1,208 @@
+# Ala-Too PM — full stack.
+#
+# Eight services behind a single nginx gateway. Two volumes hold the
+# database and the per-project file uploads; everything else is rebuilt
+# from images on every `docker compose up`.
+#
+# All knobs live in the .env file next to this compose file. See .env.example
+# for a starting point.
+
+services:
+
+  # ---- Data plane --------------------------------------------------------
+
+  taiga-db:
+    image: postgres:12.3
+    container_name: taiga-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - taiga-db-data:/var/lib/postgresql/data
+    networks:
+      - taiga
+    restart: unless-stopped
+
+  taiga-events-rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: taiga-events-rabbitmq
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}
+    networks:
+      - taiga
+    restart: unless-stopped
+
+  taiga-async-rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: taiga-async-rabbitmq
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}
+    networks:
+      - taiga
+    restart: unless-stopped
+
+  # ---- Application -------------------------------------------------------
+
+  taiga-back:
+    build:
+      context: ./taiga-back
+      dockerfile: docker/Dockerfile
+    image: ala-too-pm-back:latest
+    container_name: taiga-back
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: taiga-db
+      TAIGA_SECRET_KEY: ${TAIGA_SECRET_KEY}
+      TAIGA_SITES_SCHEME: ${TAIGA_SCHEME}
+      TAIGA_SITES_DOMAIN: ${TAIGA_DOMAIN}
+      TAIGA_SUBPATH: ${SUBPATH}
+      EVENTS_PUSH_BACKEND_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@taiga-events-rabbitmq:5672/${RABBITMQ_VHOST}"
+      CELERY_BROKER_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@taiga-async-rabbitmq:5672/${RABBITMQ_VHOST}"
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+      EMAIL_BACKEND: ${EMAIL_BACKEND}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL}
+      ENABLE_TELEMETRY: "False"
+      PUBLIC_REGISTER_ENABLED: ${PUBLIC_REGISTER_ENABLED}
+      SESSION_COOKIE_SECURE: ${COOKIE_SECURE}
+      CSRF_COOKIE_SECURE: ${COOKIE_SECURE}
+    volumes:
+      - taiga-static-data:/taiga-back/static
+      - taiga-media-data:/taiga-back/media
+    networks:
+      - taiga
+    depends_on:
+      - taiga-db
+      - taiga-events-rabbitmq
+      - taiga-async-rabbitmq
+    restart: unless-stopped
+
+  taiga-async:
+    build:
+      context: ./taiga-back
+      dockerfile: docker/Dockerfile
+    image: ala-too-pm-back:latest
+    container_name: taiga-async
+    entrypoint: ["./docker/async_entrypoint.sh"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: taiga-db
+      TAIGA_SECRET_KEY: ${TAIGA_SECRET_KEY}
+      TAIGA_SITES_SCHEME: ${TAIGA_SCHEME}
+      TAIGA_SITES_DOMAIN: ${TAIGA_DOMAIN}
+      TAIGA_SUBPATH: ${SUBPATH}
+      EVENTS_PUSH_BACKEND_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@taiga-events-rabbitmq:5672/${RABBITMQ_VHOST}"
+      CELERY_BROKER_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@taiga-async-rabbitmq:5672/${RABBITMQ_VHOST}"
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+      EMAIL_BACKEND: ${EMAIL_BACKEND}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL}
+      ENABLE_TELEMETRY: "False"
+    volumes:
+      - taiga-static-data:/taiga-back/static
+      - taiga-media-data:/taiga-back/media
+    networks:
+      - taiga
+    depends_on:
+      - taiga-back
+    restart: unless-stopped
+
+  taiga-front:
+    build:
+      context: ./taiga-front
+      dockerfile: branding/Dockerfile
+    container_name: taiga-front
+    environment:
+      TAIGA_URL: "${TAIGA_SCHEME}://${TAIGA_DOMAIN}"
+      TAIGA_WEBSOCKETS_URL: "${TAIGA_WS_SCHEME}://${TAIGA_DOMAIN}"
+      TAIGA_SUBPATH: ${SUBPATH}
+      DEBUG: "false"
+      DEFAULT_LANGUAGE: "en"
+      # The front receives lowercase booleans because they go straight
+      # into a JSON config file via envsubst. The Python back uses the
+      # same env names but expects Python-style "True"/"False" — that is
+      # why we re-derive the front-side value from PUBLIC_REGISTER_ENABLED.
+      PUBLIC_REGISTER_ENABLED: ${PUBLIC_REGISTER_ENABLED_JS:-false}
+      CONTRIB_PLUGINS: "[]"
+      GITHUB_CLIENT_ID: ""
+      GITLAB_CLIENT_ID: ""
+      GITLAB_URL: ""
+      ENABLE_GITHUB_IMPORTER: "false"
+      ENABLE_JIRA_IMPORTER: "false"
+      ENABLE_TRELLO_IMPORTER: "false"
+    networks:
+      - taiga
+    restart: unless-stopped
+
+  taiga-events:
+    image: taigaio/taiga-events:latest
+    container_name: taiga-events
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      TAIGA_SECRET_KEY: ${TAIGA_SECRET_KEY}
+    networks:
+      - taiga
+    depends_on:
+      - taiga-events-rabbitmq
+    restart: unless-stopped
+
+  taiga-protected:
+    image: taigaio/taiga-protected:latest
+    container_name: taiga-protected
+    environment:
+      MAX_AGE: ${ATTACHMENTS_MAX_AGE}
+      SECRET_KEY: ${TAIGA_SECRET_KEY}
+    networks:
+      - taiga
+    restart: unless-stopped
+
+  # ---- Edge --------------------------------------------------------------
+
+  taiga-gateway:
+    image: nginx:1.25-alpine
+    container_name: taiga-gateway
+    ports:
+      - "${HTTP_PORT}:80"
+    volumes:
+      - ./gateway/taiga.conf:/etc/nginx/conf.d/default.conf:ro
+      - taiga-static-data:/taiga/static
+      - taiga-media-data:/taiga/media
+    networks:
+      - taiga
+    depends_on:
+      - taiga-front
+      - taiga-back
+      - taiga-events
+      - taiga-protected
+    restart: unless-stopped
+
+
+networks:
+  taiga:
+    driver: bridge
+
+
+volumes:
+  taiga-static-data:
+  taiga-media-data:
+  taiga-db-data:

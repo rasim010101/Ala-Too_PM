@@ -1,0 +1,352 @@
+/*
+ * Ala-Too PM — brand overrides.
+ *
+ * Loaded after theme-taiga.css. Re-paints the primary brand surfaces
+ * (nav bar, primary buttons, hero, login mark) with Ala-Too
+ * International University colours and replaces the inline Taiga SVG
+ * logos with the university seal via background-image.
+ *
+ * Palette is taken straight from the AIU seal:
+ *   navy   #1d2b6e  — the seal ring and lettering
+ *   red    #c4202c  — the central "ALA-TOO 1996" band
+ *   white  #ffffff  — the mountain and text-on-primary
+ *
+ * The original Taiga logo is shipped inline in the compiled HTML (jade
+ * `include` of an SVG file), so we cannot swap it by replacing a file —
+ * we hide it with CSS and paint the PNG mark in its place.
+ */
+
+:root {
+    --alatoo-primary:        #1d2b6e;
+    --alatoo-primary-d:      #131c4d;
+    --alatoo-accent:         #c4202c;
+    --alatoo-accent-d:       #9a1822;
+    --alatoo-text-on-primary:#ffffff;
+    --alatoo-banner-h:       28px;
+    --alatoo-seal-url:       url("../images/logo-alatoo.png");
+}
+
+/* ---------- University identification band ---------- */
+body::before {
+    content: "Ala-Too International University \00b7  Project Management Workspace  \00b7  alatoo.edu.kg";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--alatoo-banner-h);
+    line-height: var(--alatoo-banner-h);
+    background: var(--alatoo-primary);
+    color: var(--alatoo-text-on-primary);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-align: center;
+    z-index: 100000;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    border-bottom: 2px solid var(--alatoo-accent);
+}
+body { padding-top: var(--alatoo-banner-h) !important; }
+
+/* ---------- Navigation bar (post-login chrome) ---------- */
+/* Real markup is:
+ *     <nav class="navbar">
+ *       <div class="nav-left">
+ *         <a class="logo"><svg id="logo-svg"...></svg></a>
+ * The inline SVG cannot be overridden by replacing a file (it is
+ * baked into the compiled AngularJS template bundle), so we hide it
+ * by id and paint the AIU seal in the parent anchor's slot.
+ */
+nav.navbar,
+.menu-secondary {
+    background-color: var(--alatoo-primary) !important;
+}
+
+nav.navbar .nav-left a.logo {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    background-image: var(--alatoo-seal-url) !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    color: transparent !important;
+    margin: 4px 8px;
+}
+
+/* Kill the inline Taiga snowflake — by id (it's unique) and by class
+ * just in case the template ever changes. */
+svg#logo-svg,
+nav.navbar a.logo svg,
+nav.navbar .logo > svg {
+    display: none !important;
+}
+
+/* ---------- Public / auth pages (login, register, error, etc.) ---------- */
+.auth, .public {
+    background-color: var(--alatoo-primary) !important;
+    color: var(--alatoo-text-on-primary);
+}
+
+/* The big circular mark on login / register / error pages comes from
+ * <div class="logo-svg"> which inlines the Taiga SVG. Hide the SVG and
+ * paint the AIU seal in the same slot. */
+.auth .logo-svg,
+.public .logo-svg {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 16px;
+    background-image: var(--alatoo-seal-url);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+.auth .logo-svg svg,
+.public .logo-svg svg {
+    display: none !important;
+}
+
+/* The wordmark sits below the seal. Hide the existing text and paint
+ * "Ala-Too PM" via ::before so we don't fight whatever text the jade
+ * partial happens to print. */
+.auth h1.logo,
+.public h1.logo {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    margin-bottom: 0.6em;
+}
+.auth h1.logo::before,
+.public h1.logo::before {
+    content: "Ala-Too PM";
+    font-size: 34px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--alatoo-text-on-primary);
+    letter-spacing: 0.02em;
+}
+
+/* Tagline ("LOVE YOUR PROJECT") and other secondary text on public
+ * pages — make them readable on the navy background. */
+.auth h2,
+.auth .tagline,
+.auth p,
+.auth label,
+.auth a:not(.btn),
+.public h2,
+.public .tagline,
+.public p,
+.public label,
+.public a:not(.btn) {
+    color: var(--alatoo-text-on-primary) !important;
+    opacity: 0.92;
+}
+
+.auth a:not(.btn):hover,
+.public a:not(.btn):hover {
+    color: var(--alatoo-accent) !important;
+    opacity: 1;
+}
+
+/* ---------- Primary CTA buttons ---------- */
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+.login-form .btn,
+.register-form .btn,
+.public .btn,
+.auth .btn {
+    background-color: var(--alatoo-accent) !important;
+    border-color: var(--alatoo-accent) !important;
+    color: #ffffff !important;
+}
+.btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover,
+.login-form .btn:hover,
+.register-form .btn:hover,
+.public .btn:hover,
+.auth .btn:hover {
+    background-color: var(--alatoo-accent-d) !important;
+    border-color: var(--alatoo-accent-d) !important;
+}
+
+/* Error banner that floats over the auth pages stays its native red but
+ * shifted closer to the AIU red so it doesn't clash. */
+.notification-error,
+.notification.notification-error {
+    background-color: var(--alatoo-accent) !important;
+    border-color: var(--alatoo-accent-d) !important;
+}
+
+/* Push any fixed-position notification down by the banner height so it
+ * doesn't paint on top of the university band. */
+.notification,
+.notification-message,
+[class*="notification"][class*="error"],
+[class*="notification"][class*="success"],
+[class*="notification"][class*="warning"] {
+    top: var(--alatoo-banner-h) !important;
+}
+
+/* ---------- All secondary sidebars — global fixes on navy ---------- */
+/* Every sidebar.menu-secondary already gets background #1d2b6e from the
+ * rule above. Taiga sets its own background-color on child li/a/header
+ * elements (white or light-grey), which creates unreadable light strips
+ * on our dark sidebar. We strip those backgrounds to transparent so the
+ * navy shows through, then paint text white. */
+sidebar.menu-secondary *,
+sidebar.menu-secondary li,
+sidebar.menu-secondary ul,
+sidebar.menu-secondary header,
+sidebar.menu-secondary section,
+sidebar.menu-secondary div {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+sidebar.menu-secondary,
+sidebar.menu-secondary a,
+sidebar.menu-secondary span,
+sidebar.menu-secondary li,
+sidebar.menu-secondary h1,
+sidebar.menu-secondary h2,
+sidebar.menu-secondary h3 {
+    color: rgba(255, 255, 255, 0.90) !important;
+}
+sidebar.menu-secondary a:hover,
+sidebar.menu-secondary li:hover > a {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+sidebar.menu-secondary li.active > a,
+sidebar.menu-secondary li.active > a * {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-left: 3px solid var(--alatoo-accent) !important;
+}
+
+/* ---------- Wiki sidebar (sidebar.menu-secondary.wiki-nav) ---------- */
+/* Real DOM (from templates.js):
+ *   <sidebar class="menu-secondary wiki-nav">
+ *     <header><h1 class="title">WIKI</h1></header>
+ *     <ul class="wiki-link-container">
+ *       <li class="wiki-link [active]">
+ *         <a class="link-title">Home / page name</a>
+ *       </li>
+ *     </ul>
+ *   </sidebar>
+ */
+sidebar.wiki-nav {
+    border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Section title ("WIKI") */
+sidebar.wiki-nav header h1.title {
+    color: rgba(255, 255, 255, 0.50) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+}
+
+/* Individual page links */
+sidebar.wiki-nav .wiki-link-container .link-title {
+    color: rgba(255, 255, 255, 0.88) !important;
+    display: block;
+    padding: 4px 12px;
+    border-radius: 4px;
+}
+sidebar.wiki-nav .wiki-link-container .link-title:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Currently open page — red left border */
+sidebar.wiki-nav .wiki-link.active .link-title {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-left: 3px solid var(--alatoo-accent) !important;
+    padding-left: 9px !important;
+}
+
+/* ---------- Team page filter sidebar (sidebar.menu-secondary, no extra class) ---------- */
+/* Real DOM:
+ *   <sidebar class="menu-secondary">
+ *     <section class="team-filters">
+ *       <header><h1>Filters</h1></header>
+ *       <nav tg-team-filters>   ← directive generates <ul><li><a> role list
+ */
+.team-filters header h1 {
+    color: rgba(255, 255, 255, 0.50) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+}
+.team-filters nav a,
+.team-filters nav li a {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+.team-filters nav a:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+.team-filters nav li.active a,
+.team-filters nav .active a {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-left: 3px solid var(--alatoo-accent) !important;
+}
+
+/* Search input inside team-filters */
+.team-filters .search-in input {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    border-radius: 4px;
+}
+.team-filters .search-in input::placeholder {
+    color: rgba(255, 255, 255, 0.50) !important;
+}
+
+/* ---------- Admin settings sidebar ---------- */
+/* Real DOM:
+ *   <sidebar class="menu-secondary sidebar settings-nav">
+ *     <section class="admin-menu">
+ *       <nav><ul><li><a><span class="title">Label</span></a></li></ul></nav>
+ */
+.admin-menu nav ul li a {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+.admin-menu nav ul li a:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+.admin-menu nav ul li.active > a,
+.admin-menu nav ul li.active > a span {
+    color: #ffffff !important;
+    border-left: 3px solid var(--alatoo-accent) !important;
+}
+
+/* ---------- Issues / Backlog filter dropdown panel ---------- */
+.filter-list a,
+.filter-list li,
+.filter-list span {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+.filter-list a:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+.filter-list .active a {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* ---------- Wiki content area — keep the white reading surface intact ---------- */
+/* The main editing area and viewer are white by default; make sure our
+ * navy overrides don't bleed into the content panel. */
+.wiki-main,
+.wiki-wysiwyg,
+.codehilite,
+.preview-container {
+    background-color: #ffffff !important;
+    color: #2d3748 !important;
+}

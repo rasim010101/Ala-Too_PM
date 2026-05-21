@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+    <rect width="32" height="32" rx="6" fill="#0B3D91"/>
+    <path d="M 5 8 L 16 4 L 27 8 L 27 19 C 27 24 22 28 16 30 C 10 28 5 24 5 19 Z"
+          fill="#F2A900"/>
+    <text x="16" y="22" text-anchor="middle"
+          font-family="Segoe UI, Roboto, Arial, sans-serif"
+          font-weight="800" font-size="13" fill="#0B3D91"
+          letter-spacing="-1">AP</text>
+</svg>
