@@ -347,7 +347,8 @@ Authentication uses a token passed in the `Authorization: Bearer <token>` header
 
 | Limitation | Notes |
 |---|---|
-| Demo URL changes on each restart | The Cloudflare Quick Tunnel (`trycloudflare.com`) assigns a new random subdomain every time `cloudflared` starts. `start.ps1` automates the reconfiguration. |
+| Local-only deployment | The current installation runs on `localhost:9000`. There is no public domain or server at this stage — access is limited to the machine running Docker. |
+| Demo URL changes on each restart | When using Cloudflare Quick Tunnel (`trycloudflare.com`) for temporary remote access, a new random subdomain is assigned every time `cloudflared` starts. `start.ps1` automates the reconfiguration. |
 | No persistent public URL without a server | A permanent installation requires either a VPS with a real domain (see `DEPLOY.md`) or a paid tunnel plan. |
 | GitHub Codespaces sleep | Codespaces instances pause after 30 minutes of inactivity; Docker containers must be restarted with `docker compose up -d` after resume. |
 | Wiki optimistic locking | Taiga uses a version field to prevent concurrent edits. If you open a wiki page, someone else saves it, and then you try to save — you'll get a conflict error. Always do Ctrl+F5 before editing to load the latest version. |

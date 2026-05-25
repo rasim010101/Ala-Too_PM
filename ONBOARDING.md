@@ -19,9 +19,12 @@ shows a green dot in the system tray before you run anything below.
 ## 2. Configuration
 
 ```powershell
-cd C:\Users\99670\Documents\internship_taiga
+cd <path-to-extracted-folder>
 Copy-Item .env.example .env
 ```
+
+Replace `<path-to-extracted-folder>` with the actual path where you extracted the archive,
+for example `C:\Users\YourName\Desktop\ala-too-pm`.
 
 Open `.env` and change at least these three values before anything goes
 to a network anyone else can reach:

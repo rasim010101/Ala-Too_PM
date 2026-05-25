@@ -1,15 +1,22 @@
 # Ala-Too PM — production deployment
 
+> **Note:** This guide describes a *future* production deployment scenario.
+> The current version of the project runs locally on a development machine.
+> No public VPS or domain has been provisioned yet.
+> For running the project right now, see **`HOW_TO_RUN.md`** instead.
+
+---
+
 This walks through putting Ala-Too PM on a single Ubuntu 22.04 VPS with
 its own domain and a real HTTPS certificate. The compose file is the
-same one used in `ONBOARDING.md`; the only differences are the
+same one used in `HOW_TO_RUN.md`; the only differences are the
 environment values, the gateway sitting behind nginx + certbot on the
 host, and a real SMTP backend instead of the console one.
 
-Assumed in the rest of the document:
+Assumed in the rest of the document (replace with real values when a server is available):
 
-- Domain:    `pm.alatoo.edu.kg` (replace with yours throughout)
-- Server IP: `203.0.113.10`     (replace with yours throughout)
+- Domain:    `pm.alatoo.edu.kg` (placeholder — replace with actual domain)
+- Server IP: `203.0.113.10`     (placeholder — replace with actual server IP)
 - Operator:  has `sudo` and SSH access
 
 ## 1. Server prep
