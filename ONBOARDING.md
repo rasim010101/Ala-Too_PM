@@ -1,5 +1,9 @@
 # Ala-Too PM — local install
 
+> **Current deployment status:** the application runs locally on your machine.
+> There is no public server or domain yet. For future production deployment
+> (VPS + real domain + HTTPS), see `DEPLOY.md`.
+
 Boots the whole stack on your laptop in ~10 minutes (the first build is
 slow because Docker has to compile Python dependencies; subsequent runs
 are nearly instant). Tested on Windows 11 with Docker Desktop 4.x,
@@ -7,35 +11,35 @@ macOS 14 and Ubuntu 22.04.
 
 ## 1. Prerequisites
 
-- Docker Desktop ≥ 4.20 (Windows / macOS) or Docker Engine ≥ 24 + Docker
-  Compose plugin (Linux).
-- ~6 GB free RAM. The first build downloads ~2 GB of base images.
-- Ports `9000` (HTTP), `5432`, `5672` free on the host. The compose file
-  exposes only `9000`; the others stay on the internal Docker network.
+| Requirement | Notes |
+|---|---|
+| **Docker Desktop ≥ 4.20** (Windows / macOS) | https://www.docker.com/products/docker-desktop/ |
+| **~6 GB free RAM** | Close heavy apps before starting |
+| **~5 GB free disk space** | For Docker images on first run |
+| **Internet connection** | Only needed on the first build |
 
 On Windows, open **PowerShell** (not cmd) and make sure Docker Desktop
-shows a green dot in the system tray before you run anything below.
+shows a white whale icon in the system tray before you run anything below.
 
-## 2. Configuration
+## 2. Extract and configure
+
+Unzip the archive into any folder, for example `C:\Projects\ala-too-pm`, then:
 
 ```powershell
-cd <path-to-extracted-folder>
+cd C:\Projects\ala-too-pm
 Copy-Item .env.example .env
 ```
 
-Replace `<path-to-extracted-folder>` with the actual path where you extracted the archive,
-for example `C:\Users\YourName\Desktop\ala-too-pm`.
+For a local run the default values in `.env` are fine — no changes needed.
 
-Open `.env` and change at least these three values before anything goes
-to a network anyone else can reach:
+If you plan to expose the app to other devices on your network, change at
+least these three values in `.env`:
 
-| Key                    | What for                                       |
-| ---------------------- | ---------------------------------------------- |
-| `TAIGA_SECRET_KEY`     | Django session signing — any long random str   |
-| `POSTGRES_PASSWORD`    | Database password                              |
-| `RABBITMQ_PASS`        | Broker password                                |
-
-For a purely local run the defaults are fine.
+| Key | What for |
+|---|---|
+| `TAIGA_SECRET_KEY` | Django session signing — any long random string |
+| `POSTGRES_PASSWORD` | Database password |
+| `RABBITMQ_PASS` | Broker password |
 
 ## 3. Build and start
 
@@ -43,79 +47,71 @@ For a purely local run the defaults are fine.
 docker compose up -d --build
 ```
 
-The first run does three things in order, automatically:
+**First run takes 5–15 minutes** while Docker downloads base images (~2 GB)
+and compiles Python dependencies. Subsequent starts take ~30 seconds.
 
-1. Builds the `ala-too-pm-back` image from `taiga-back/` (Python deps,
-   `collectstatic`, `compilemessages`).
-2. Builds the `ala-too-pm-front` image on top of `taigaio/taiga-front`
-   and layers in the brand assets from `taiga-front/branding/`.
-3. Starts all eight containers, runs `manage.py migrate`, loads the
-   project templates fixture (with our renamed roles), and opens the
-   gateway on port `9000`.
-
-Watch the back service finish migrating:
+Watch the backend finish starting:
 
 ```powershell
 docker compose logs -f taiga-back
 ```
 
-When you see `Starting Taiga API...` the API is up.
+When you see `Starting Taiga API...` — the app is ready. Press `Ctrl+C` to
+stop watching logs (containers keep running).
 
-## 4. Create the first user
-
-The very first user has to be a Django superuser, otherwise nobody can
-get into the admin panel.
+## 4. Create the first admin account
 
 ```powershell
 docker compose exec taiga-back python manage.py createsuperuser
 ```
 
-Pick a username (e.g. `admin`), an email, and a strong password.
+Enter a username (e.g. `admin`), email, and password when prompted.
 
 ## 5. Open the app
 
-Visit <http://localhost:9000> in the browser. Sign in with the user you
-just created. The Django admin (rarely needed) is at
-<http://localhost:9000/admin/>.
+Visit **http://localhost:9000** and sign in with the account you just created.
+
+The Django admin panel (for user management) is at **http://localhost:9000/admin/**.
 
 To create your first course project:
 
-1. Click **Create project**.
-2. Pick template *Scrum (Course Project)* or *Kanban (Lab & Workshop)*.
-3. Invite students under **Settings → Members**. The role dropdown
-   already lists *Instructor / Teaching Assistant / Team Lead / Student
-   / Course Coordinator / Reviewer*.
+1. Click **Create project**
+2. Pick *Scrum (Course Project)* or *Kanban (Lab & Workshop)*
+3. Invite members under **Settings → Members** — the role dropdown lists
+   *Instructor, Teaching Assistant, Team Lead, Student, Course Coordinator, Reviewer*
 
-## 6. Stopping / restarting / wiping
+## 6. Stop / restart / wipe
 
 ```powershell
-# stop the stack (data is preserved)
+# stop all containers (all data is preserved)
 docker compose down
 
-# start it again
+# start again (fast, no rebuild)
 docker compose up -d
 
-# wipe the database and uploaded files (irreversible)
+# wipe database and uploaded files completely (irreversible)
 docker compose down -v
 ```
 
 ## Troubleshooting
 
-**`taiga-back` keeps restarting.** Almost always a database connection
-issue. Check `docker compose logs taiga-db` — Postgres needs a few
-seconds to initialise on the first start. The back container retries
-migrations on each restart, so it will catch up by itself.
+**Page does not open / "Cannot connect"**  
+→ Make sure Docker Desktop is running. Check `docker compose ps` — all services should show `Up`.
 
-**Front loads but Kanban / Scrum board is empty after refresh.**
-WebSocket events are not reaching the browser. Check
-`docker compose logs taiga-events` and the browser DevTools network
-tab — the `/events` request should upgrade to `101 Switching
-Protocols`. If you are behind a corporate proxy that strips `Upgrade`
-headers, it will not work; use a hotspot instead.
+**`taiga-back` keeps restarting**  
+→ The database is still initialising. Wait 30 seconds; the container retries automatically and will recover on its own.
 
-**Email links use `http://localhost:9000`.** Expected — set
-`TAIGA_DOMAIN` and `TAIGA_SCHEME` in `.env` if you want links to point
-somewhere else.
+**Port 9000 is already in use**  
+→ Open `.env`, change `HTTP_PORT=9000` to any free port (e.g. `8080`), run `docker compose up -d`, then open `http://localhost:8080`.
 
-**Port 9000 already in use.** Change `HTTP_PORT` in `.env` to any free
-port and `docker compose up -d` again.
+**Kanban / Scrum board is empty after browser refresh**  
+→ The WebSocket connection dropped. Press F5 to reload the page.
+
+**Wiki shows infinite loading when saving**  
+→ Press `Ctrl+F5` (hard reload) before editing the page to fetch the latest version from the server, then try saving again.
+
+**Front loads but live updates don't work**  
+→ Check `docker compose logs taiga-events`. If you are behind a corporate proxy that strips `Upgrade` headers, WebSocket connections will fail — switch to a hotspot or home network.
+
+**Email links say `http://localhost:9000`**  
+→ Expected for local runs. Set `TAIGA_DOMAIN` and `TAIGA_SCHEME` in `.env` when deploying publicly.
